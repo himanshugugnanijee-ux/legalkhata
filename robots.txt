@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
-Sitemap: https://www.legalkhata.com/sitemap.xml
+Sitemap: https://legalkhata.com/sitemap.xml
