@@ -485,6 +485,7 @@ def main():
         open(os.path.join(OUT, "robots.txt"), "w").write("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: %s/sitemap.xml\n" % SITE)
         open(os.path.join(OUT, "_headers"), "w").write("/assets/*\n  Cache-Control: public, max-age=604800\n")
         open(os.path.join(OUT, "wrangler.jsonc"), "w").write(json.dumps({"name": "legalkhata", "compatibility_date": "2026-11-12", "assets": {"directory": "."}}, indent="\t") + "\n")
+        open(os.path.join(OUT, ".assetsignore"), "w").write(".git\n.github\nwrangler.jsonc\n")
     print(len(PAGES), "pages ->", os.path.normpath(OUT))
 
 main()
