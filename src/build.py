@@ -484,6 +484,7 @@ def main():
         open(os.path.join(OUT, "sitemap.xml"), "w").write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n%s</urlset>\n' % urls)
         open(os.path.join(OUT, "robots.txt"), "w").write("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: %s/sitemap.xml\n" % SITE)
         open(os.path.join(OUT, "_headers"), "w").write("/assets/*\n  Cache-Control: public, max-age=604800\n")
+        open(os.path.join(OUT, "wrangler.jsonc"), "w").write(json.dumps({"name": "legalkhata", "compatibility_date": "2026-11-12", "assets": {"directory": "."}}, indent="\t") + "\n")
     print(len(PAGES), "pages ->", os.path.normpath(OUT))
 
 main()
