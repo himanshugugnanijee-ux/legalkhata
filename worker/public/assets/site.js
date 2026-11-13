@@ -70,22 +70,18 @@
       if (digits.length < 8 || digits.length > 15) { err.textContent = "Please enter a valid phone number, with country code if you are outside India."; err.hidden = false; return; }
       err.hidden = true;
       d.page = location.pathname; d.referrer = document.referrer || "";
-      var label = btn.textContent; btn.disabled = true; btn.textContent = "Sending your query";
-      function finish(saved) {
-        var box = document.createElement("div"); box.className = "done"; box.setAttribute("role", "status");
-        box.innerHTML = (saved
-          ? "<strong>Query received. Thank you, " + esc(d.name) + ".</strong><p>We will call you back on " + esc(d.phone) + " during office hours. For a faster reply, send the same details on WhatsApp.</p>"
-          : "<strong>We could not save your query online just now.</strong><p>Please send it on WhatsApp with one tap, or call +91 70489 15155. Your details are already filled in.</p>") +
-          (PREVIEW ? "<p class='note'>Preview only: on the live site this query is saved, emailed to the office and added to the CRM.</p>" : "") +
-          "<a class='btn wa' target='_blank' rel='noopener' href='" + waLink(d) + "'>Send on WhatsApp</a>";
-        form.replaceWith(box);
-        try { if (window.gtag) window.gtag("event", "generate_lead", { service: d.service || "", edition: d.edition || "" }); } catch (x) {}
-      }
-      if (PREVIEW) { finish(true); return; }
-      fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) })
-        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { finish(r.ok && j.ok); }); })
-        .catch(function () { finish(false); })
-        .then(function () { btn.disabled = false; btn.textContent = label; });
+      var link = waLink(d);
+      var box = document.createElement("div"); box.className = "done"; box.setAttribute("role", "status");
+      box.innerHTML = "<strong>Opening WhatsApp…</strong><p>Tap <b>send</b> in WhatsApp to deliver your query to Legal Khata. We will call you back on " + esc(d.phone) + " during office hours.</p>" +
+        (PREVIEW ? "<p class='note'>Preview only: on the live site this opens WhatsApp with your query pre-filled.</p>" : "") +
+        "<a class='btn wa' target='_blank' rel='noopener' href='" + link + "'>Open WhatsApp again</a>";
+      form.replaceWith(box);
+      try { if (window.gtag) window.gtag("event", "generate_lead", { service: d.service || "", edition: d.edition || "" }); } catch (x) {}
+      if (PREVIEW) return;
+      /* open WhatsApp straight away with the query pre-filled, addressed to Legal Khata */
+      window.open(link, "_blank", "noopener");
+      /* best-effort background save; WhatsApp delivery above does not depend on this */
+      try { fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) }).catch(function () {}); } catch (x) {}
     });
   });
 })();
