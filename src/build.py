@@ -45,7 +45,16 @@ LOGO = '<svg viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32"
 PAGES = []          # every page: dict(ed, path, title, desc, body, alt, schema, crumbs)
 ALT = {}            # alt key -> {edition code: path}
 
+def clip(s, max_len):
+    """Trim s to max_len at a word boundary (never mid-word), no ellipsis."""
+    if len(s) <= max_len: return s
+    cut = s[:max_len]
+    sp = cut.rfind(" ")
+    return (cut[:sp] if sp > 0 else cut).rstrip(" ,|-")
+
 def add(ed, path, title, desc, body, alt=None, schema=None, crumbs=None, noindex=False):
+    title = clip(title, 60)
+    desc = clip(desc, 160)
     PAGES.append(dict(ed=ed, path=path, title=title, desc=desc, body=body, alt=alt, schema=schema or [], crumbs=crumbs, noindex=noindex))
     if alt: ALT.setdefault(alt, {})[ed["code"]] = path
 
@@ -116,7 +125,7 @@ def office_block(heading="Visit our office in Rohini, Delhi"):
 def header(pg):
     ed = pg["ed"]; india = ed["code"] == "in"
     if india:
-        cols = "".join('<div><h4>%s</h4>%s</div>' % (dict(GROUPS)[g], "".join('<a href="/%s">%s</a>' % (s, e(SVC[s]["name"])) for s in MENU_SERVICES[g])) for g in ("setup", "reg", "tax"))
+        cols = "".join('<div><p class="col-label">%s</p>%s</div>' % (dict(GROUPS)[g], "".join('<a href="/%s">%s</a>' % (s, e(SVC[s]["name"])) for s in MENU_SERVICES[g])) for g in ("setup", "reg", "tax"))
         nav = f'''<a href="/">Home</a>
 <details><summary>Services</summary><div class="drop">{cols}<a class="all" href="/services">See all services</a></div></details>
 <details><summary>Delhi areas</summary><div class="drop two">{"".join('<a href="/%s">%s</a>' % (a["slug"], e(a["name"])) for a in AREAS)}</div></details>
@@ -150,12 +159,12 @@ def footer(ed):
         c1 = "".join('<li><a href="/%s">%s</a></li>' % (s["slug"], e(s["name"])) for s in SERVICES[:9])
         c2 = "".join('<li><a href="/%s">%s</a></li>' % (s["slug"], e(s["name"])) for s in SERVICES[9:])
         c3 = "".join('<li><a href="/%s">%s</a></li>' % (a["slug"], e(a["name"])) for a in AREAS[:8])
-        cols = f'<div><h4>Services</h4><ul>{c1}</ul></div><div><h4>More services</h4><ul>{c2}</ul></div><div><h4>Areas we serve</h4><ul>{c3}<li><a href="/services#areas">All Delhi areas</a></li></ul></div>'
+        cols = f'<div><p class="col-label">Services</p><ul>{c1}</ul></div><div><p class="col-label">More services</p><ul>{c2}</ul></div><div><p class="col-label">Areas we serve</p><ul>{c3}<li><a href="/services#areas">All Delhi areas</a></li></ul></div>'
     else:
         c1 = "".join('<li><a href="%s">%s</a></li>' % (p(ed, s["slug"]), e(s["name"])) for s in ed["services"])
         c2 = "".join('<li><a href="%s">%s</a></li>' % (p(ed, "india-services"), e(n)) for n, _ in NRI_SERVICES[:5])
         c3 = "".join('<li><a href="%s" data-edition-link="%s" data-name="%s">%s</a></li>' % (home(x), x["code"], e(x["name"]), e(x["name"])) for x in EDITIONS if x is not ed)
-        cols = f'<div><h4>{e(ed["short"])} services</h4><ul>{c1}</ul></div><div><h4>India services</h4><ul>{c2}</ul></div><div><h4>Other countries</h4><ul>{c3}</ul></div>'
+        cols = f'<div><p class="col-label">{e(ed["short"])} services</p><ul>{c1}</ul></div><div><p class="col-label">India services</p><ul>{c2}</ul></div><div><p class="col-label">Other countries</p><ul>{c3}</ul></div>'
     return f'''<footer class="foot"><div class="wrap">
 <div class="foot-cols"><div class="stack"><img class="foot-logo" src="/assets/img/logo-white.png" alt="Legal Khata" width="516" height="173"><p>{ADDR1}<br>{ADDR2}{"" if india else "<br>India"}</p>
 <p><a href="tel:{PHONE}">{PHONE_SHOW}</a><br><a href="mailto:{EMAIL}">{EMAIL}</a></p><p>Monday to Saturday, 7:00 AM to 7:00 PM{"" if india else " India time"}</p>
@@ -357,7 +366,7 @@ def build_india():
 <h2>Who sees it</h2><p>Your query is stored in our practice management system and emailed to our office. Documents you share for filing are submitted to the relevant government portal on your instructions.</p>
 <h2>Keeping and deleting it</h2><p>We keep query details for as long as needed to respond and, for clients, for the period professional and tax rules require. To ask for correction or deletion, write to <a href="mailto:{EMAIL}">{EMAIL}</a>.</p>
 <h2>Contact</h2><p>Legal Khata, {ADDR1}, {ADDR2}. Phone {PHONE_SHOW}.</p></div></div></section>'''
-    add(ed, "/privacy-policy", "Privacy Policy | Legal Khata", "How Legal Khata handles information sent through this website.", body)
+    add(ed, "/privacy-policy", "Privacy Policy | Legal Khata", "How Legal Khata collects, uses and protects information you share through this website, forms and WhatsApp.", body)
     body = f'''<section class="sec"><div class="wrap"><div class="prose"><h1>We could not find that page</h1><p>The page may have moved. These links cover most of what people look for.</p>
 <ul><li><a href="/">Home</a></li><li><a href="/services">All services</a></li><li><a href="/contact">Contact us</a></li></ul>{cta_row(ed, "Send a free query")}</div></div></section>
 <section class="sec green"><div class="wrap"><div style="max-width:460px">{lead_form(ed, "Send a free query", "Tell us what you were looking for.")}</div></div></section>'''
@@ -416,7 +425,7 @@ def build_world(ed):
 <h2>Related services</h2><ul class="chips" style="padding:0">{"".join('<li><a href="%s">%s</a></li>' % (p(ed, x["slug"]), e(x["name"])) for x in others)}<li><a href="{p(ed, "india-services")}">India services for NRIs</a></li></ul>
 </div><div class="side">{lead_form(ed, "Ask about " + s["name"], "We reply within one working day.", selected=s["name"], tag="h3")}</div></div></section>
 {band(ed, "Get a fixed quote", "Tell us about your business and we reply with scope, timeline and fee.")}'''
-        add(ed, path, "%s%s | Legal Khata" % (s["name"], where), "%s %s" % (s["short"], "Fixed fee quoted in %s by Legal Khata." % ed["currency"]), body,
+        add(ed, path, "%s%s | Legal Khata" % (s["name"], where), "%s %s" % (s["short"], "Fixed fee quoted in %s by Legal Khata, with a reply within one working day." % ed["currency"]), body,
             schema=[crumb_schema(crumbs, path), faq_schema(faqs), {"@context": "https://schema.org", "@type": "Service", "name": s["name"], "description": s["short"], "provider": {"@id": SITE + "/#office"}, "areaServed": ed["name"] if not g else "Worldwide", "url": SITE + path}])
 
     crumbs = [("Home", home(ed)), ("India services", None)]; path = p(ed, "india-services")
@@ -486,6 +495,32 @@ def main():
         open(os.path.join(OUT, "sitemap.xml"), "w").write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n%s</urlset>\n' % urls)
         open(os.path.join(OUT, "robots.txt"), "w").write("User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: %s/sitemap.xml\n" % SITE)
         open(os.path.join(OUT, "_headers"), "w").write("/assets/*\n  Cache-Control: public, max-age=604800\n")
+        # 301s for legacy URLs still indexed/linked from the pre-rebuild site, so they
+        # consolidate into their current equivalents instead of diluting relevance/crawl budget.
+        redirects = """/australia/Xero_Book_Keeper /au/bookkeeping 301
+/australia/Xero_Book_Keeper.php /au/bookkeeping 301
+/australia/bas-lodgement /au/bas-preparation 301
+/australia/bookkeeping-reconciliation.php /au/bookkeeping 301
+/australia/accounting-and-tax-support-services /au/services 301
+/australia/contact.php /au/contact 301
+/australia/* /au/ 301
+/canada/index.php /ca/ 301
+/canada/about.php /ca/about 301
+/canada/bookkeeping.php /ca/bookkeeping 301
+/canada/cra-business-number /ca/incorporation 301
+/canada/cra-business-number.php /ca/incorporation 301
+/canada/gst-hst /ca/gst-hst-returns 301
+/canada/payroll.php /ca/bookkeeping 301
+/canada/corporate-compliance.php /ca/corporate-tax-return 301
+/canada/* /ca/ 301
+/private-limited-registration.php /private-limited-registration 301
+/trademark-registration.php /trademark-registration 301
+/services.php /services 301
+/contact.php /contact 301
+/about.php /about 301
+/opc-reg.php /opc-reg 301
+"""
+        open(os.path.join(OUT, "_redirects"), "w").write(redirects)
         open(os.path.join(OUT, "wrangler.jsonc"), "w").write(json.dumps({"name": "legalkhata", "compatibility_date": "2026-11-12", "assets": {"directory": "."}}, indent="\t") + "\n")
         open(os.path.join(OUT, ".assetsignore"), "w").write(".git\n.github\nwrangler.jsonc\n")
     print(len(PAGES), "pages ->", os.path.normpath(OUT))
