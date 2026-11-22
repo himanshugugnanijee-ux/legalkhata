@@ -62,6 +62,10 @@ def home(ed): return ed["prefix"] + "/" if ed["prefix"] else "/"
 def p(ed, slug): return ed["prefix"] + "/" + slug
 def ul(items, cls=""): return "<ul%s>%s</ul>" % (' class="%s"' % cls if cls else "", "".join("<li>%s</li>" % e(i) for i in items))
 def faq_html(faqs): return '<div class="faq">%s</div>' % "".join("<details><summary>%s</summary><p>%s</p></details>" % (e(q), e(a)) for q, a in faqs)
+def pricing_block(s):
+    rows = "".join("<tr><td>%s</td><td><strong>%s</strong></td></tr>" % (e(a), e(b)) for a, b in s["pricing"])
+    return ('<h2>Our fees</h2><div class="scroll"><table class="dates"><thead><tr><th>Service</th><th>Starting fee</th></tr></thead><tbody>%s</tbody></table></div>'
+            '<p class="muted small" style="margin-top:10px">%s</p>') % (rows, e(s.get("pricing_note", "")))
 def faq_schema(faqs): return {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs]}
 def crumb_html(crumbs): return '<ol class="crumbs">%s</ol>' % "".join('<li><a href="%s">%s</a></li>' % (u, e(n)) if u else "<li>%s</li>" % e(n) for n, u in crumbs)
 def crumb_schema(crumbs, path): return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": n, "item": SITE + (u or path)} for i, (n, u) in enumerate(crumbs)]}
@@ -269,6 +273,7 @@ def build_india():
         schema=[crumb_schema([("Home", "/"), ("Services", None)], "/services")])
 
     # service pages
+    FEES_CALLOUT = '<div class="callout"><p><strong>Fees.</strong> We quote a fixed professional fee before starting, with government fees shown separately. Call <a href="tel:%s">%s</a> or send the form for today\'s quote.</p></div>' % (PHONE, PHONE_SHOW)
     for s in SERVICES:
         path = "/" + s["slug"]; crumbs = [("Home", "/"), ("Services", "/services"), (s["name"], None)]
         related = [x for x in SERVICES if x["group"] == s["group"] and x is not s][:4]
@@ -283,7 +288,7 @@ def build_india():
 <h2>Documents you need</h2>{ul(s["docs"])}<p class="muted small">Requirements vary with the type of business. We send you an exact checklist after a short call.</p>
 <h2>How the process works</h2><ol class="steps">{"".join("<li><span>%s</span></li>" % e(x) for x in s["steps"])}</ol>
 <h2>How long it takes</h2><p>{e(s["time"])}</p>
-<div class="callout"><p><strong>Fees.</strong> We quote a fixed professional fee before starting, with government fees shown separately. Call <a href="tel:{PHONE}">{PHONE_SHOW}</a> or send the form for today's quote.</p></div>
+{pricing_block(s) if s.get("pricing") else FEES_CALLOUT}
 <h2>Frequently asked questions</h2>{faq_html(s["faqs"])}
 <h2>Related services</h2><ul class="chips" style="padding:0">{"".join('<li><a href="/%s">%s</a></li>' % (x["slug"], e(x["name"])) for x in related)}</ul>
 <p class="muted small">Legal Khata, {ADDR1}, {ADDR2}. Serving Rohini, Pitampura, Netaji Subhash Place, Shalimar Bagh and all Delhi NCR.</p>
